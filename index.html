@@ -3,147 +3,118 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Affiliate Generator — Quick</title>
-  <!-- Tailwind CDN for fast modern colourful dashboard -->
+  <title>Affiliate Generator — Stable</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    /* small polish */
-    .glass { background: linear-gradient(135deg, rgba(255,255,255,0.6), rgba(255,255,255,0.35)); backdrop-filter: blur(6px); }
-  </style>
 </head>
-<body class="min-h-screen bg-gradient-to-br from-indigo-50 via-pink-50 to-yellow-50 text-slate-800">
-  <div class="max-w-6xl mx-auto p-6">
-    <header class="flex items-center justify-between mb-6">
-      <h1 class="text-3xl font-extrabold">Affiliate Generator</h1>
-      <div class="text-sm text-slate-600">Masukkan link produk → Generate gambar + 4-adegan naskah</div>
-    </header>
+<body class="min-h-screen bg-gradient-to-br from-indigo-100 via-pink-100 to-yellow-100 p-6">
+  <div class="max-w-5xl mx-auto">
+    <h1 class="text-3xl font-extrabold mb-4">Affiliate Generator (Stable)</h1>
 
-    <main class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <!-- Left: controls -->
-      <section class="col-span-1 glass rounded-2xl p-6 shadow-lg">
-        <label class="block text-sm font-medium text-slate-600">Product URL</label>
-        <input id="productUrl" type="url" placeholder="https://..." class="mt-2 w-full p-3 rounded-lg border focus:outline-none focus:ring-2 focus:ring-indigo-300" />
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-        <label class="block text-sm font-medium text-slate-600 mt-4">Model / Style (opsional)</label>
-        <input id="styleHint" placeholder="e.g. lifestyle, studio shot, model holding the product, vibrant colors" class="mt-2 w-full p-3 rounded-lg border" />
+      <!-- Panel kiri -->
+      <div class="bg-white p-6 rounded-2xl shadow">
+        <label class="text-sm font-medium">Link Produk</label>
+        <input id="productUrl" class="w-full p-3 rounded-lg border mt-2" placeholder="https://tokopedia.com/..." />
 
-        <div class="flex gap-2 mt-4">
-          <button id="generateBtn" class="px-4 py-3 rounded-lg font-semibold bg-gradient-to-r from-indigo-500 to-pink-500 text-white shadow">Generate</button>
-          <button id="clearBtn" class="px-4 py-3 rounded-lg font-medium border">Clear</button>
-        </div>
+        <label class="text-sm font-medium mt-4 block">Deskripsi Singkat Produk</label>
+        <textarea id="productDesc" class="w-full p-3 rounded-lg border mt-2 h-24" placeholder="Contoh: Serum wajah untuk glowing dan anti aging"></textarea>
 
-        <div id="status" class="mt-4 text-sm text-slate-600"></div>
+        <label class="text-sm font-medium mt-4 block">Style Foto (opsional)</label>
+        <input id="styleHint" class="w-full p-3 rounded-lg border mt-2" placeholder="lifestyle, aesthetic, studio shot, model holding product" />
 
-        <div class="mt-6 text-xs text-slate-500">Hints: Agar hasil maksimal, masukkan link produk yang memiliki gambar besar (og:image). Jika tidak ada, sistem akan mencoba generate gambar model + produk.</div>
-      </section>
+        <button id="generateBtn" class="w-full mt-4 p-3 rounded-lg bg-gradient-to-r from-indigo-500 to-pink-500 text-white font-semibold shadow">Generate</button>
 
-      <!-- Middle: preview image -->
-      <section class="col-span-1 lg:col-span-2 glass rounded-2xl p-6 shadow-lg">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-xl font-semibold">Preview</h2>
-          <div class="text-sm text-slate-500">Download / Copy</div>
-        </div>
+        <div id="status" class="text-sm text-slate-600 mt-3"></div>
+      </div>
 
-        <div id="previewArea" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div class="rounded-lg border p-3 bg-white flex flex-col items-center justify-center">
-            <div id="imgWrapper" class="w-full h-64 bg-slate-100 rounded-lg flex items-center justify-center overflow-hidden">
-              <img id="productImage" alt="product" class="max-h-full max-w-full object-contain" />
+      <!-- Panel kanan -->
+      <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow">
+        <h2 class="text-xl font-semibold mb-4">Hasil Generate</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Gambar -->
+          <div>
+            <div class="border rounded-lg bg-slate-100 h-64 flex items-center justify-center overflow-hidden">
+              <img id="productImage" class="max-w-full max-h-full object-contain" />
             </div>
-            <div id="productTitle" class="mt-2 text-sm font-medium text-center"></div>
           </div>
 
-          <div class="rounded-lg border p-3 bg-white">
-            <h3 class="font-semibold mb-2">Generated Script (4 scenes)</h3>
-            <div id="scriptArea" class="space-y-3 text-sm text-slate-700"></div>
+          <!-- Naskah 4 adegan -->
+          <div>
+            <h3 class="font-semibold mb-2">Naskah</h3>
+            <div id="scriptArea" class="space-y-3 text-sm"></div>
           </div>
         </div>
 
-        <div class="mt-4">
-          <button id="downloadImage" class="px-4 py-2 rounded-lg border">Download Image</button>
-          <button id="copyScript" class="px-4 py-2 rounded-lg border ml-2">Copy Script</button>
+        <div class="mt-4 flex gap-3">
+          <button id="downloadImage" class="px-4 py-2 border rounded-lg">Download Gambar</button>
+          <button id="copyScript" class="px-4 py-2 border rounded-lg">Copy Naskah</button>
         </div>
-      </section>
-    </main>
-
-    <footer class="mt-8 text-xs text-slate-500">Deploy tip: set `OPENROUTER_API_KEY` in Vercel env. Serverless endpoint: <code>/api/generate</code>.</footer>
+      </div>
+    </div>
   </div>
 
-  <script>
-    const $ = sel => document.querySelector(sel);
-    const status = $('#status');
-    const productImage = $('#productImage');
-    const productTitle = $('#productTitle');
-    const scriptArea = $('#scriptArea');
+<script>
+const $ = sel => document.querySelector(sel);
 
-    document.getElementById('generateBtn').addEventListener('click', async () => {
-      const url = $('#productUrl').value.trim();
-      const styleHint = $('#styleHint').value.trim();
-      if (!url) { status.textContent = 'Masukkan URL produk dulu.'; return; }
+$('#generateBtn').addEventListener('click', async () => {
+  const url = $('#productUrl').value.trim();
+  const desc = $('#productDesc').value.trim();
+  const style = $('#styleHint').value.trim();
 
-      status.textContent = 'Menghubungi server...';
-      $('#generateBtn').disabled = true;
+  if (!url || !desc) {
+    $('#status').textContent = 'URL & deskripsi produk wajib diisi.';
+    return;
+  }
 
-      try {
-        const res = await fetch('/api/generate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url, styleHint })
-        });
-        if (!res.ok) throw new Error('Server error: ' + res.status);
-        const data = await res.json();
+  $('#status').textContent = 'Generating...';
 
-        // image
-        if (data.image_url) {
-          productImage.src = data.image_url;
-        } else if (data.image_base64) {
-          productImage.src = 'data:image/png;base64,' + data.image_base64;
-        } else {
-          productImage.src = '';
-          productImage.alt = 'No image';
-        }
+  const res = await fetch('/api/generate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url, desc, style })
+  });
 
-        // title
-        productTitle.textContent = data.title || '';
+  const data = await res.json();
 
-        // script
-        scriptArea.innerHTML = '';
-        if (data.scenes && Array.isArray(data.scenes)) {
-          data.scenes.forEach(s => {
-            const el = document.createElement('div');
-            el.className = 'p-3 border rounded-lg bg-white';
-            el.innerHTML = `<strong>${s.role}</strong><div class="mt-2">${s.text.replace(/\n/g, '<br>')}</div>`;
-            scriptArea.appendChild(el);
-          });
-        } else if (data.script) {
-          const el = document.createElement('div'); el.textContent = data.script; scriptArea.appendChild(el);
-        }
+  if (data.error) {
+    $('#status').textContent = 'Error: ' + data.error;
+    return;
+  }
 
-        status.textContent = 'Selesai.';
-      } catch (err) {
-        console.error(err);
-        status.textContent = 'Gagal: ' + err.message;
-      } finally {
-        $('#generateBtn').disabled = false;
-      }
-    });
+  // Set image
+  if (data.image_base64)
+    $('#productImage').src = 'data:image/png;base64,' + data.image_base64;
 
-    document.getElementById('clearBtn').addEventListener('click', () => {
-      $('#productUrl').value = '';
-      $('#styleHint').value = '';
-      productImage.src = '';
-      productTitle.textContent = '';
-      scriptArea.innerHTML = '';
-      status.textContent = '';
-    });
+  // Set script
+  $('#scriptArea').innerHTML = '';
+  data.scenes.forEach(s => {
+    const el = document.createElement('div');
+    el.className = 'p-3 border rounded-lg bg-slate-50';
+    el.innerHTML = `<strong>${s.role}</strong><br>${s.text}`;
+    $('#scriptArea').appendChild(el);
+  });
 
-    document.getElementById('copyScript').addEventListener('click', async () => {
-      const texts = Array.from(scriptArea.querySelectorAll('div')).map(d => d.innerText).join('\n\n');
-      try { await navigator.clipboard.writeText(texts); status.textContent = 'Script disalin.';} catch { status.textContent = 'Gagal salin.' }
-    });
+  $('#status').textContent = 'Berhasil!';
+});
 
-    document.getElementById('downloadImage').addEventListener('click', () => {
-      if (!productImage.src) return; const a = document.createElement('a'); a.href = productImage.src; a.download = 'product.png'; a.click();
-    });
-  </script>
+$('#copyScript').onclick = async () => {
+  const content = Array.from(document.querySelectorAll('#scriptArea div')).map(el => el.innerText).join('
+
+');
+  await navigator.clipboard.writeText(content);
+  $('#status').textContent = 'Script disalin.';
+};
+
+$('#downloadImage').onclick = () => {
+  const img = $('#productImage').src;
+  if (!img) return;
+  const a = document.createElement('a');
+  a.href = img;
+  a.download = 'affiliate-image.png';
+  a.click();
+};
+</script>
 </body>
 </html>

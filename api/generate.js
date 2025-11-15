@@ -1,100 +1,159 @@
-// /api/generate.js (Stable Version)
 export default async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-
-  const { url, desc, style } = req.body;
-  if (!url || !desc) return res.status(400).json({ error: 'Missing fields' });
-
-  const key = process.env.OPENROUTER_API_KEY;
-  if (!key) return res.status(500).json({ error: 'Missing OPENROUTER_API_KEY' });
-
   try {
-    // -------------------------------------
-    // 1) Generate Image (Multimodal Model)
-    // -------------------------------------
-    const imagePrompt = `Fotorealistic image for an affiliate product.
-Model memegang produk.
-Produk: ${desc}
-Style: ${style || 'lifestyle, aesthetic, clean lighting'}
-Kualitas sangat tinggi, real human model.`;
+    if (req.method !== "POST") {
+      return res.status(405).json({ error: "Hanya menerima POST." });
+    }
 
-    const imgRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
+    const { url, desc, style } = req.body || {};
+
+    if (!process.env.OPENROUTER_API_KEY) {
+      return res.status(500).json({
+        error: "API Key tidak ditemukan",
+        error_detail: "Set OPENROUTER_API_KEY di Vercel → Settings → Environment Variables"
+      });
+    }
+
+    if (!url || !desc) {
+      return res.status(400).json({
+        error: "Input tidak lengkap",
+        error_detail: "Field 'url' dan 'desc' wajib dikirim oleh frontend."
+      });
+    }
+
+    // MODEL DEFAULT STABIL
+    const IMAGE_MODEL = process.env.IMAGE_MODEL || "google/gemini-2.0-flash-exp";
+    const TEXT_MODEL  = process.env.TEXT_MODEL  || "google/gemini-2.0-flash-lite-preview";
+    const KEY = process.env.OPENROUTER_API_KEY;
+
+    // --------------------------------------------------------------
+    // 1) GENERATE IMAGE
+    // --------------------------------------------------------------
+
+    const imgPrompt = `
+Buatkan foto produk untuk kebutuhan konten affiliate.
+Gunakan gaya realistik, aesthetic, clean lighting.
+
+Produk:
+${desc}
+
+Style tambahan:
+${style || "lifestyle, clean soft lighting"}
+
+Foto harus terlihat profesional, orientasi potrait, 1 model memegang produk atau menunjukkan produk.
+    `;
+
+    const imgResp = await fetch("https://openrouter.ai/api/v1/images", {
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${key}`,
-        'Content-Type': 'application/json'
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${KEY}`,
+        "HTTP-Referer": "https://yourapp.com",
+        "X-Title": "Affiliate Generator",
       },
       body: JSON.stringify({
-        model: process.env.OPENROUTER_MODEL || 'google/gemini-2.0-flash-exp',
-        messages: [
-          {
-            role: 'user',
-            content: [
-              { type: 'text', text: imagePrompt }
-            ]
-          }
-        ],
-        max_tokens: 2048,
-        modalities: ['text', 'image']
+        model: IMAGE_MODEL,
+        prompt: imgPrompt,
+        size: "1024x1024"
       })
     });
 
-    const imgJson = await imgRes.json();
+    const imgJson = await imgResp.json().catch(e => {
+      return { error: "Gagal parse JSON image", error_detail: String(e) };
+    });
 
-    let base64 = null;
-    const contentArr = imgJson?.choices?.[0]?.message?.content || [];
-
-    for (const c of contentArr) {
-      if (c.type === 'output_image') {
-        base64 = c.image_base64;
-        break;
-      }
+    if (imgJson.error) {
+      return res.status(500).json({
+        error: "Gagal generate gambar",
+        error_detail: imgJson.error_detail || imgJson.error
+      });
     }
 
-    // -------------------------------------
-    // 2) Generate Script 4 Scenes
-    // -------------------------------------
-    const scriptPrompt = `Buat naskah promosi AFFILIATE dalam 4 adegan:
-1. Hook
-2. Problem
-3. Solution
-4. CTA
-Produk: ${desc}
-Gunakan gaya seperti konten TikTok, singkat dan persuasive.`;
+    const image_base64 = imgJson.image || imgJson.data?.[0]?.b64_json;
+    if (!image_base64) {
+      return res.status(500).json({
+        error: "Gagal membaca output gambar",
+        error_detail: JSON.stringify(imgJson)
+      });
+    }
 
-    const scriptRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
+    // --------------------------------------------------------------
+    // 2) GENERATE SCRIPT 4 ADEGAN
+    // --------------------------------------------------------------
+
+    const scriptPrompt = `
+Buatkan naskah konten short video affiliate.
+Format harus seperti:
+
+[
+  { "role": "Hook",    "text": "..."},
+  { "role": "Problem", "text": "..."},
+  { "role": "Solution","text": "..."},
+  { "role": "CTA",     "text": "..."}
+]
+
+Produk: ${desc}
+URL Referensi: ${url}
+
+Ringkas, langsung to-the-point, gaya bahasa ringan dan friendly.
+    `;
+
+    const scriptResp = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${key}`,
-        'Content-Type': 'application/json'
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${KEY}`,
+        "HTTP-Referer": "https://yourapp.com",
+        "X-Title": "Affiliate Generator",
       },
       body: JSON.stringify({
-        model: process.env.OPENROUTER_TEXT_MODEL || 'gpt-4o-mini',
+        model: TEXT_MODEL,
         messages: [
-          { role: 'user', content: scriptPrompt }
+          { role: "system", content: "You are an expert script writer." },
+          { role: "user", content: scriptPrompt }
         ]
       })
     });
 
-    const scriptJson = await scriptRes.json();
-    const textOut = scriptJson?.choices?.[0]?.message?.content || '';
+    const scriptJson = await scriptResp.json().catch(e => ({
+      error: "Gagal parse JSON script",
+      error_detail: String(e)
+    }));
 
-    // Pecah 4 bagian
-    const sections = textOut.split(/
-+/).filter(x => x.trim() !== '');
-    const scenes = [
-      { role: 'Hook', text: sections[0] || '' },
-      { role: 'Problem', text: sections[1] || '' },
-      { role: 'Solution', text: sections[2] || '' },
-      { role: 'CTA', text: sections[3] || '' }
-    ];
+    if (scriptJson.error) {
+      return res.status(500).json({
+        error: "Gagal generate naskah",
+        error_detail: scriptJson.error_detail || scriptJson.error
+      });
+    }
 
-    return res.json({
-      image_base64: base64,
+    let textRaw = scriptJson.choices?.[0]?.message?.content?.trim();
+    if (!textRaw) {
+      return res.status(500).json({
+        error: "Tidak ada output naskah",
+        error_detail: JSON.stringify(scriptJson)
+      });
+    }
+
+    // Pastikan output JSON valid
+    let scenes = [];
+    try {
+      scenes = JSON.parse(textRaw);
+    } catch (e) {
+      // Jika output bukan JSON, ubah manual menjadi 4 bagian
+      scenes = [
+        { role: "Hook", text: textRaw }
+      ];
+    }
+
+    return res.status(200).json({
+      image_base64,
       scenes
     });
 
   } catch (err) {
-    return res.status(500).json({ error: 'Server error', details: String(err) });
+    return res.status(500).json({
+      error: "Server error",
+      error_detail: String(err)
+    });
   }
 }
